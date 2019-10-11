@@ -20,14 +20,20 @@ spec:
       labels:
         app: {{ template "name" . }}
         release: {{ .Release.Name }}
+      {{- if .Values.podAnnotations }}
+      annotations:
+        {{- range $key, $value := .Values.podAnnotations }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}
+      {{- end }}
     spec:
       serviceAccountName: {{ if .Values.rbac.create }}{{ template "fullname" . }}{{ else }}{{ .Values.rbac.serviceAccountName | quote }}{{ end }}
       hostname: "{{ template "fullname" . }}"
 {{- if .Values.kubePlex.enabled }}
       initContainers:
       - name: kube-plex-install
-        image: "{{ .Values.kubePlexImage.repository }}:{{ .Values.kubePlexImage.tag }}"
-        imagePullPolicy: {{ .Values.kubePlexImage.pullPolicy }}
+        image: "{{ .Values.kubePlex.image.repository }}:{{ .Values.kubePlex.image.tag }}"
+        imagePullPolicy: {{ .Values.kubePlex.image.pullPolicy }}
         command:
         - cp
         - /kube-plex
@@ -55,10 +61,25 @@ spec:
                 rm -f '/usr/lib/plexmediaserver/Plex Transcoder'
                 cp /shared/kube-plex '/usr/lib/plexmediaserver/Plex Transcoder'
 {{- end }}
-        # readinessProbe:
-        #   httpGet:
-        #     path: /
-        #     port: 32400
+        readinessProbe:
+          httpGet:
+            path: /identity
+            port: 32400
+          initialDelaySeconds: 15
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /identity
+            port: 32400
+          initialDelaySeconds: 10
+          timeoutSeconds: 10
+        ports:
+          - name: pms
+            containerPort: 32400
+          - name: http
+            containerPort: 32400
+          - name: https
+            containerPort: 32443
         env:
         - name: TZ
           value: "{{ .Values.timezone }}"
@@ -95,10 +116,19 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /data
+        {{- if .Values.persistence.data.subPath }}
+          subPath: {{ .Values.persistence.data.subPath }}
+        {{ end }}
         - name: config
           mountPath: /config
+        {{- if .Values.persistence.config.subPath }}
+          subPath: {{ .Values.persistence.config.subPath }}
+        {{ end }}
         - name: transcode
           mountPath: /transcode
+        {{- if .Values.persistence.transcode.subPath }}
+          subPath: {{ .Values.persistence.transcode.subPath }}
+        {{ end }}
         - name: shared
           mountPath: /shared
         resources:

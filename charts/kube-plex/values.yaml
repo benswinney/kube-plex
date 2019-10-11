@@ -3,7 +3,7 @@
 # Declare variables to be passed into your templates.
 image:
   repository: plexinc/pms-docker
-  tag: 1.10.1.4602-f54242b6b
+  tag: 1.16.0.1226-7eb2c8f6f
   pullPolicy: IfNotPresent
 
 kubePlex:
@@ -21,6 +21,24 @@ timezone: Europe/London
 
 service:
   type: ClusterIP
+  port: 32400
+  ## Specify the nodePort value for the LoadBalancer and NodePort service types.
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
+  ##
+  # nodePort:
+  ## Provide any additional annotations which may be required. This can be used to
+  ## set the LoadBalancer service type to internal only.
+  ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
+  ##
+  annotations: {}
+  labels: {}
+  ## Use loadBalancerIP to request a specific static IP,
+  ## otherwise leave blank
+  ##
+  loadBalancerIP:
+  # loadBalancerSourceRanges: []
+  ## Set the externalTrafficPolicy in the Service to either Cluster or Local
+  # externalTrafficPolicy: Cluster
 
 ingress:
   enabled: false
@@ -42,6 +60,9 @@ rbac:
   # account for this deployment
   ## serviceAccountName: ""
 
+nodeSelector:
+  beta.kubernetes.io/arch: amd64
+
 persistence:
   transcode:
     # Optionally specify claimName to manually override the PVC to be used for
@@ -52,6 +73,7 @@ persistence:
     # If not specified and claimName is not specified, the default storage
     # class will be used.
     storageClass: ""
+    # subPath: some-subpath
     # The requested size of the volume to be used when creating a
     # PersistentVolumeClaim.
     size: 20Gi
@@ -64,6 +86,7 @@ persistence:
     # If not specified and claimName is not specified, the default storage
     # class will be used.
     storageClass: ""
+    # subPath: some-subpath
     # The requested size of the volume to be used when creating a
     # PersistentVolumeClaim.
     size: 40Gi
@@ -75,10 +98,12 @@ persistence:
     # Optionally specify a storage class to be used for the config directory.
     # If not specified and claimName is not specified, the default storage
     # class will be used.
+    # subPath: some-subpath
     storageClass: ""
     # The requested size of the volume to be used when creating a
     # PersistentVolumeClaim.
     size: 20Gi
+    accessMode: ReadWriteMany
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious
@@ -91,3 +116,5 @@ resources: {}
   # requests:
   #  cpu: 100m
   #  memory: 128Mi
+
+podAnnotations: {}
